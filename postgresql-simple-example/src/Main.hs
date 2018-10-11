@@ -9,3 +9,5 @@ main = do
   conn <- connectPostgreSQL "host=localhost port=5432 user=postgres"
   [Only i] <- query_ conn "select 2 + 2"
   print @Int i
+  people <- query_ conn "select * from people"
+  print @[(Int, String, Int, Double)] people

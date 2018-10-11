@@ -15,3 +15,6 @@ main = do
   Right conn <- acquire "host=localhost port=5432 user=postgres"
   e_i <- run (statement () (Statement "select 2 + 2" HE.unit (HD.singleRow (HD.column HD.int4)) False)) conn
   print @(Either QueryError Int32) e_i
+  e_people <- run (statement () (Statement "select * from people" HE.unit
+                                (HD.rowList ((,,,) <$> HD.column HD.int4 <*> HD.column HD.text <*> HD.column HD.int4 <*> HD.column HD.float8)) False)) conn
+  print e_people

@@ -24,8 +24,8 @@ main = do
   e_people <- run (statement () (Statement "select * from people" HE.unit
                                 (HD.rowList mkRow) False)) conn
   print @(Either _ [Person]) e_people
-  e_marx <- run (statement 2 (Statement "select name from people where id = $1" (HE.param HE.int4) (HD.singleRow (HD.column HD.text)) False)) conn
-  print e_marx
+  e_marx <- run (statement 2 (Statement "select name, age from people where id = $1" (HE.param HE.int4) (HD.singleRow mkRow) False)) conn
+  print @(Either _ (Text, Int32)) e_marx
 
 data Person = Person
     { _id :: Maybe Int32

@@ -18,5 +18,5 @@ main = do
   e_people <- run (statement () (Statement "select * from people" HE.unit
                                 (HD.rowList ((,,,) <$> HD.column HD.int4 <*> HD.column HD.text <*> HD.column HD.int4 <*> HD.column HD.float8)) False)) conn
   print e_people
-  e_marx <- run (statement 2 (Statement "select name from people where id = $1" (HE.param HE.int4) (HD.singleRow (HD.column HD.text)) False)) conn
+  e_marx <- run (statement 2 (Statement "select name, age from people where id = $1" (HE.param HE.int4) (HD.singleRow ((,) <$> HD.column HD.text <*> HD.column HD.int4)) False)) conn
   print e_marx

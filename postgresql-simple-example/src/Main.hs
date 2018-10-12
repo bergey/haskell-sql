@@ -11,5 +11,5 @@ main = do
   print @Int i
   people <- query_ conn "select * from people"
   print @[(Int, String, Int, Double)] people
-  [Only marx] <- query conn "select name from people where id = ?" (Only (2::Int))
-  print @String marx
+  [marx] <- query conn "select name, age from people where id = ?" (Only (2::Int))
+  print @(String, Int) marx

@@ -13,3 +13,6 @@ main = do
   print @[(Int, String, Int, Double)] people
   [marx] <- query conn "select name, age from people where id = ?" (Only (2::Int))
   print @(String, Int) marx
+
+  tasks <- query_ conn "select name, description from people join tasks on owner = people.id"
+  print @[(String, String)] tasks

@@ -3,6 +3,7 @@ run: build
 	stack exec hasql-vanilla-example
 	stack exec hasql-generic-example
 	stack exec persistent-example
+	stack exec esqueleto-example
 
 build:
 	stack build

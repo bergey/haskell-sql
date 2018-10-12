@@ -4,11 +4,14 @@ packages:
     - hasql-generic-example
     - postgresql-simple-example
     - persistent-example
+    - esqueleto-example
     - location: 
         git: 'https://github.com/etsemerald/hasql-generic.git'
         commit: '294aba8f29cf4c3d05dfdf586925ee2b1e5ba6d2'
       extra-dep: true
-extra-deps: []
+extra-deps:
+    - git: 'https://github.com/bitemyapp/esqueleto.git'
+      commit: 'b81e0d951e510ebffca03c5a58658ad884cc6fbd'
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

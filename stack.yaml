@@ -3,6 +3,7 @@ packages:
     - hasql-vanilla
     - hasql-generic-example
     - postgresql-simple-example
+    - persistent-example
     - location: 
         git: 'https://github.com/etsemerald/hasql-generic.git'
         commit: '294aba8f29cf4c3d05dfdf586925ee2b1e5ba6d2'

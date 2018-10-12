@@ -2,6 +2,7 @@ run: build
 	stack exec postgresql-simple-example
 	stack exec hasql-vanilla-example
 	stack exec hasql-generic-example
+	stack exec persistent-example
 
 build:
 	stack build

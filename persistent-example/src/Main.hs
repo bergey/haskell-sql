@@ -11,13 +11,18 @@ module Main where
 import           Database.Persist
 import           Database.Persist.Postgresql
 import           Database.Persist.TH
+import           Orphans
 
+import           Control.Arrow ((&&&))
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Data.Text (Text)
 import           Data.Time (UTCTime)
 import           Data.UUID (UUID)
+import           Web.PathPieces
 
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.UUID as UUID
 import qualified Data.Aeson as JSON
 import qualified Data.Vector as V
 
@@ -27,6 +32,13 @@ Person sql=people
     age Int
     height Double sql=height_inches
     deriving Show
+
+Meeting sql=meetings
+    Id UUID sqltype=uuid
+    time UTCTime
+    details Jsonb
+    attendees [Text]
+    deriving Show
 |]
 
 main :: IO ()
@@ -35,11 +47,11 @@ main = runStderrLoggingT $
     people <- runSqlConn (selectList [] []) conn
     liftIO $ print @[Entity Person] people
 
-    -- marx <- get (PersonKey 2)  -- full row
-    -- print (personName marx, personAge marx)
+    m_marx <- runSqlConn (get (PersonKey 2)) conn  -- full row
+    liftIO $ print (fmap (personName &&& personAge) m_marx)
 
-    -- tasks <- query_ conn "select name, description from people join tasks on owner = people.id"
-    -- print @[(String, String)] tasks
+    -- No joins in persistent
 
     -- meetings <- query_ conn "select id, time, details, attendees from meetings"
-    -- print @[(UUID, UTCTime, JSON.Value, V.Vector String)] meetings
+    meetings <- runSqlConn (selectList [] []) conn
+    liftIO $ print @[Entity Meeting] meetings

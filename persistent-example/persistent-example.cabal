@@ -18,15 +18,17 @@ cabal-version:       >=1.10
 
 executable persistent-example
   main-is:             Main.hs
-  -- other-modules:
+  other-modules:
+      Orphans
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12
                      , persistent
                      , persistent-postgresql
                      , persistent-template
                      , aeson
-                     , monad-logger
                      , bytestring
+                     , monad-logger
+                     , path-pieces
                      , text
                      , time
                      , uuid

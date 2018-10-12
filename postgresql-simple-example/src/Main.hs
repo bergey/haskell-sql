@@ -2,7 +2,12 @@
 {-# LANGUAGE TypeApplications #-}
 module Main where
 
-import Database.PostgreSQL.Simple
+import           Data.Time (UTCTime)
+import           Database.PostgreSQL.Simple
+import           Data.UUID (UUID)
+
+import qualified Data.Aeson as JSON
+import qualified Data.Vector as V
 
 main :: IO ()
 main = do
@@ -16,3 +21,6 @@ main = do
 
     tasks <- query_ conn "select name, description from people join tasks on owner = people.id"
     print @[(String, String)] tasks
+
+    meetings <- query_ conn "select id, time, details, attendees from meetings"
+    print @[(UUID, UTCTime, JSON.Value, V.Vector String)] meetings

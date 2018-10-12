@@ -1,3 +1,5 @@
+CREATE EXTENSION pgcrypto;
+
 CREATE TABLE people (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
@@ -11,7 +13,7 @@ INSERT INTO people (name, age, height_inches) VALUES
     
 
 CREATE TABLE tasks (
-    id SERIAL,
+    id SERIAL PRIMARY KEY,
     owner INT NOT NULL REFERENCES people(id),
     description TEXT
 );
@@ -19,3 +21,14 @@ CREATE TABLE tasks (
 INSERT INTO tasks (owner, description) VALUES
     (1, 'feed Marx'),
     (2, 'nap');
+
+CREATE TABLE meetings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    time TIMESTAMPTZ,
+    details JSONB NOT NULL default '{}',
+    attendees text[] NOT NULL default '{}'
+);
+
+INSERT INTO meetings (time, details, attendees) VALUES
+    ('2018-01-01', '{"location": "home", "topic": "happy new year"}', '{Daniel, Marx}'),
+    ('2018-10-11', '{"location": "office", "topic": "SQL libraries"}', '{Daniel, Jim}');

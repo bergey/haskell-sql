@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeApplications #-}
 module Main where
 
+import           Control.Monad
 import           Data.Int
 import           Hasql.Connection
 import           Hasql.Session
@@ -23,3 +24,6 @@ main = do
 
     e_tasks <- run (statement () (Statement "select name, description from people join tasks on owner = people.id" (HE.unit) (HD.rowList ((,) <$> HD.column HD.text <*> HD.column HD.text)) False)) conn
     print e_tasks
+
+    e_meetings <- run (statement () (Statement "select id, time, details, attendees from meetings" HE.unit (HD.rowList ((,,,) <$> HD.column HD.uuid <*> HD.column HD.timestamptz <*> HD.column HD.jsonb <*> HD.column (HD.array (HD.dimension replicateM (HD.element HD.text))))) False)) conn
+    print e_meetings

@@ -4,6 +4,7 @@ run: build
 	stack exec hasql-generic-example
 	stack exec persistent-example
 	stack exec esqueleto-example
+	stack exec opaleye-example
 
 build:
 	stack build

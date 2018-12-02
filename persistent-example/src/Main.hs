@@ -68,6 +68,12 @@ main = runStderrLoggingT $
     (tasks :: [(Single Text, Single Text)]) <- runSql conn $ rawSql "select p.name, t.description FROM people AS p JOIN tasks AS t ON t.owner = p.id" []
     liftIO $ print @[(Text, Text)] (bimap unSingle unSingle <$> tasks)
 
+    -- params with ?, ?? will name all the columns in the expected type
+    -- but ?? won't work if we have an alias for `tasks`
+    let daniel = "Daniel" :: Text
+    myTasks <- runSql conn $ rawSql "select ?? FROM tasks JOIN people AS p ON tasks.owner = p.id WHERE p.name = ?" [toPersistValue daniel]
+    liftIO $ print @[Entity Task] myTasks
+
     -- meetings <- query_ conn "select id, time, details, attendees from meetings"
     meetings <- runSqlConn (selectList [] []) conn
     liftIO $ print @[Entity Meeting] meetings

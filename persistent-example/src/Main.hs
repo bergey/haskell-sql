@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -18,6 +19,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.IO.Unlift (MonadUnliftIO)
 import           Control.Monad.Logger
 import           Control.Monad.Reader (ReaderT)
+import           Data.Bifunctor
 import           Data.Text (Text)
 import           Data.Time (UTCTime)
 import           Data.UUID (UUID)
@@ -33,6 +35,11 @@ Person sql=people
     name Text
     age Int
     height Double sql=height_inches
+    deriving Show
+
+Task sql=tasks
+    owner PersonId
+    description Text
     deriving Show
 
 Meeting sql=meetings
@@ -58,6 +65,8 @@ main = runStderrLoggingT $
     liftIO $ print (fmap (personName &&& personAge) m_marx)
 
     -- No joins in persistent
+    (tasks :: [(Single Text, Single Text)]) <- runSql conn $ rawSql "select p.name, t.description FROM people AS p JOIN tasks AS t ON t.owner = p.id" []
+    liftIO $ print @[(Text, Text)] (bimap unSingle unSingle <$> tasks)
 
     -- meetings <- query_ conn "select id, time, details, attendees from meetings"
     meetings <- runSqlConn (selectList [] []) conn

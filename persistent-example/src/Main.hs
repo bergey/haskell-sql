@@ -15,7 +15,9 @@ import           Orphans
 
 import           Control.Arrow ((&&&))
 import           Control.Monad.IO.Class
+import           Control.Monad.IO.Unlift (MonadUnliftIO)
 import           Control.Monad.Logger
+import           Control.Monad.Reader (ReaderT)
 import           Data.Text (Text)
 import           Data.Time (UTCTime)
 import           Data.UUID (UUID)
@@ -40,6 +42,11 @@ Meeting sql=meetings
     attendees [Text]
     deriving Show
 |]
+
+runSql :: (MonadUnliftIO m, IsPersistBackend backend,
+           BaseBackend backend ~ SqlBackend) =>
+          backend -> ReaderT backend m a -> m a
+runSql = flip runSqlConn
 
 main :: IO ()
 main = runStderrLoggingT $

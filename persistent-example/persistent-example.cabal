@@ -28,9 +28,12 @@ executable persistent-example
                      , aeson
                      , bytestring
                      , monad-logger
+                     , mtl
                      , path-pieces
                      , text
                      , time
+                     , transformers
+                     , unliftio-core
                      , uuid
                      , vector
   hs-source-dirs:      src

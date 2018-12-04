@@ -26,11 +26,11 @@ import           Data.Time (UTCTime)
 import           Data.UUID (UUID)
 import           Web.PathPieces
 
-import qualified Prelude
+import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.UUID as UUID
-import qualified Data.Aeson as JSON
 import qualified Data.Vector as V
+import qualified Prelude
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person sql=people

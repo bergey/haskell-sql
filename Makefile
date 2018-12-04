@@ -11,7 +11,7 @@ build:
 
 init:
 	docker run -d -p 5432:5432 postgres
-	psql "host=localhost port=5432 user=postgres" -f init.sql
+	while true; do psql "host=localhost port=5432 user=postgres" -f init.sql && break || sleep 1; done
 
 psql:
 	psql "host=localhost port=5432 user=postgres"

@@ -1,10 +1,11 @@
-resolver: lts-12.12
+resolver: lts-12.20
 packages:
     - hasql-vanilla
     - hasql-generic-example
     - postgresql-simple-example
     - persistent-example
     - esqueleto-example
+    - beam
     - opaleye-example
     - opaleye-th
     - location: 
@@ -15,6 +16,7 @@ extra-deps:
     - opaleye-0.6.7002.0
     - git: 'https://github.com/bitemyapp/esqueleto.git'
       commit: 'b81e0d951e510ebffca03c5a58658ad884cc6fbd'
+    - beam-postgres-0.3.2.2
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

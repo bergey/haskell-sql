@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 executable opaleye-th
   main-is:             Main.hs
-  -- other-modules:
+  other-modules: TH
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12
                      , aeson

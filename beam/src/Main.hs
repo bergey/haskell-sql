@@ -73,25 +73,11 @@ instance Table TaskT where
     primaryKey = TaskId . taskId
 instance Beamable (PrimaryKey TaskT)
 
-data MeetingType = Slack | Phone | Face
-    deriving (Eq, Enum, Show, Read)
-
-instance FromField MeetingType where
-    fromField f mbs = do
-        x <- readMaybe <$> fromField f mbs
-        case x of
-            Nothing -> returnError ConversionFailed f "Could not 'read' value for 'MeetingType'"
-            Just x -> pure x
-instance FromBackendRow Postgres MeetingType
-instance HasSqlValueSyntax be String => HasSqlValueSyntax be MeetingType where
-  sqlValueSyntax = autoSqlValueSyntax
-
 data MeetingT f = Meeting
     { meetingId :: Columnar f UUID
-    , meetingTime :: Columnar f UTCTime
-    , meetingType :: C f (Maybe MeetingType)
+    , meetingTime :: Columnar f (Maybe UTCTime)
     , meetingDetails :: Columnar f JSON.Value
-    , meetingAttendees :: Columnar f (Vector PersonId)
+    , meetingAttendees :: Columnar f (Vector Text)
     } deriving Generic
 
 type Meeting = MeetingT Identity

@@ -1,6 +1,6 @@
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -20,13 +20,13 @@ import           Data.Time
 import           Data.UUID (UUID)
 import           Data.Vector (Vector)
 import           Database.Beam
-import           Database.Beam.Backend.SQL.SQL92
+-- import           Database.Beam.Backend.SQL.SQL92
 import           Database.Beam.Postgres
-import           Database.PostgreSQL.Simple.FromField
+-- import           Database.PostgreSQL.Simple.FromField
 import           Prelude
-import           Text.Read as X (readMaybe)
+-- import           Text.Read as X (readMaybe)
 
-import qualified Data.Vector as V
+-- import qualified Data.Vector as V
 import qualified Data.UUID as UUID
 
 mkID :: Coercible UUID.UUID id => String -> id
@@ -107,97 +107,130 @@ db = defaultDbSettings `withDbModification`
             { taskOwner = PersonId (fieldNamed "owner") }
         }
 
-runSql :: Connection -> Pg a -> IO a
-runSql = runBeamPostgresDebug putStrLn
+runLabeled :: Show a => Connection -> String -> Pg a -> IO ()
+runLabeled conn label query = do
+    putStrLn label
+    a <- runBeamPostgresDebug putStrLn conn query
+    print a
+    putStrLn ""
 
 main :: IO ()
 main = do
     conn <- connect (ConnectInfo "localhost" 5432 "postgres" "" "")
+    let
+        runSql :: Show a => String -> Pg a -> IO ()
+        runSql = runLabeled conn
 
-    -- runSql conn $ runInsert $ insert (_people db) $
-    --     insertValues
-    --         [ Person 3 "Jones" 6 11
-    --         , Person 4 "', 1, 2, 3, '" 0 99
-    --         ]
+    runSql "insert full" $ runInsert $ insert (_people db) $
+        insertValues
+            [ Person 3 "Jones" 6 11
+            , Person 4 "', 1, 2, 3, '" 0 99
+            ]
 
-    -- insert rows with default PK
-    runSql conn $ runInsert $ insert (_people db) $
+    runSql "insert with default PK" $ runInsert $ insert (_people db) $
         insertExpressions
             [ Person default_ (val_ "Proudhon") (val_ (-1)) (val_ (-1))
             , Person default_ (val_ "Kropotkin") (val_ 180) (val_ 64)
             ]
 
-    people <- runSql conn $ runSelectReturningList $ select $ all_ (_people db)
-    print @[Person] people
+    runSql "select all" $ runSelectReturningList $ select $ all_ (_people db)
 
-    -- select by ID
-    m_marx <- runSql conn $ runSelectReturningOne $ select $
-        filter_ ((==. 2) . personId) $
-        all_ (_people db)
-    print m_marx
+    runSql "select by ID short" $ runSelectReturningOne $
+        lookup_ (_people db) (PersonId 2)
 
-    -- other where clause
-    adults <- runSql conn $ runSelectReturningList $ select $
+    runSql "select by ID where clause" $ runSelectReturningOne $ select $
+        filter_ ((==. 2) . personId) $ all_ (_people db)
+
+    runSql "select by other where clause" $ runSelectReturningList $ select $
         filter_ ((>. 10) . personAge) (all_ (_people db))
-    print adults
 
-    -- order by, limit
-    sorted <- runSql conn $ runSelectReturningList $ select $
+    runSql "return only selected fields" $ runSelectReturningList $ select $ do
+        p <- all_ (_people db)
+        return (personName p, personAge p)
+
+    let byAgeRange (lo, hi) = runSelectReturningList $ select $ do
+            p <- all_ (_people db)
+            guard_ (personAge p >=. val_ lo &&. personAge p <=. val_ hi)
+            return p
+    runSql "parameterize by multiple inputs" $ byAgeRange (10, 19)
+
+    runSql "order by & limit" $ runSelectReturningList $ select $
         orderBy_ (\u -> (asc_ (personName u), desc_ (personAge u)))
         (limit_ 3 (all_ (_people db)))
-    print sorted
 
-    -- aggregate functions - count / min / max - all rows
-    count <- runSql conn $ runSelectReturningList $ select $
+    -- -- aggregate functions - count / min / max - all rows
+    runSql "aggregate count(*)" $ runSelectReturningList $ select $
              aggregate_ (\_ -> as_ @Int countAll_) (all_ (_people db))
-    print count
-    eldest <- runSql conn $ runSelectReturningOne $ select $
+
+    runSql "aggregate max" $ runSelectReturningOne $ select $
              aggregate_ (max_ . personAge) (all_ (_people db))
-    print eldest
 
     -- aggregate functions - min / max - group by
-    countsByName <- runSql conn $ runSelectReturningList $ select $
+    runSql "aggregate group by" $ runSelectReturningList $ select $
         aggregate_ (\p -> (group_ (personName p), as_ @Int countAll_))
                           (all_ (_people db))
-    print countsByName
 
-    -- joins
-    assigned <- runSql conn $ runSelectReturningList $ select $ do
+    -- -- joins
+    runSql "join 1 cross & where" $ runSelectReturningList $ select $ do
         person <- all_ (_people db)
         task <- all_ (_tasks db)
         -- guard_ (primaryKey person ==. taskOwner task)
         guard_ (taskOwner task `references_` person)
         return (person, task)
-    print assigned
 
-    assigned2 <- runSql conn $ runSelectReturningList $ select $ do
+    runSql "join 2 many first" $ runSelectReturningList $ select $ do
         task <- all_ (_tasks db)
         person <- related_ (_people db) (taskOwner task)
         return (person, task)
-    print assigned2
 
-    assigned3 <- runSql conn $ runSelectReturningList $ select $ do
+    runSql "join 3 one first" $ runSelectReturningList $ select $ do
         person <- all_ (_people db)
         tasks <- oneToMany_ (_tasks db) taskOwner person
         return (person, tasks)
-    putStr "assigned3"
-    print assigned3
 
-    -- outer join
-    assigned4 <- runSql conn $ runSelectReturningList $ select $
+    -- -- outer join
+    runSql "outer join" $ runSelectReturningList $ select $
         outerJoin_ (all_ (_people db)) (all_ (_tasks db)) (\(p, t) -> pk p ==. taskOwner t)
-    putStr "assigned4 " >> print assigned4
 
-    meetings <- runSql conn $ runSelectReturningList $ select $ all_ (_meetings db)
-    putStr "meetings" >> print meetings
+    -- array columns
+    runSql "array column" $ runSelectReturningList $ select $ all_ (_meetings db)
 
-    -- let
-    --     tasksQ :: Q PgSelectSyntax TodoDb _ (Text, Text)
-    --     tasksQ  = do
-    --         person <- all_ (_people db)
-    --         task <- all_ (_tasks db)
-    --         guard_ (taskOwner task `references_` person)
-    --         return (personName person, taskDescription task)
-    -- dumpSqlSelect $ tasksQ
-    -- tasks <- runSql conn $ runSelectReturningList $ select $ tasksQ
-    -- print tasks
+    -- inline SQL - escape hatch, likely needed for some of below
+    -- "SELECT name || ' needs to ' || description FROM people JOIN tasks ON owner = people.id"
+    runSql "inline SQL || string concat"  $ runSelectReturningList $ select $ do
+        p <- all_ (_people db)
+        t <- oneToMany_ (_tasks db) taskOwner p
+        -- return (p, t)
+        return $ as_ @Text $ valueExpr_ $ customExpr_ (\name desc -> name <> "|| ' needs to ' ||" <> desc) (personName p) (taskDescription t)
+
+    runSql "inline SQL modulo 2" $ runSelectReturningList $ select $ do
+        p <- all_ (_people db)
+        guard_ (customExpr_ (\age -> "mod(" <> age <> ", 2) = 0") (personAge p))
+        return p
+
+    -- aggregate functions - array_agg
+    runSql "aggregate array_agg 1" $ runSelectReturningList $ select $ do
+        p <- all_ (_people db)
+        (owner, tasks) <- aggregate_ (\t -> (group_ (taskOwner t), pgArrayAgg (taskDescription t))) (all_ (_tasks db))
+        guard_ (pk p ==. owner)
+        return (p, tasks)
+
+    -- The version above joins people with a subquery, and uses a
+    -- WHERE clause instead of an ON clause.  The version below joins
+    -- people and tasks, then groups the whole query - closer to the
+    -- SQL I would write by hand.
+    runSql "aggregate array_agg 2" $ runSelectReturningList $ select $
+        aggregate_ (\(p, t) -> (group_ p, pgArrayAgg (taskDescription t))) $ do
+            person <- all_ (_people db)
+            tasks <- oneToMany_ (_tasks db) taskOwner person
+            return (person, tasks)
+
+    runSql "array @> superset" $ runSelectReturningList $ select $ do
+        m <- all_ (_meetings db)
+        guard_ (meetingAttendees m `isSupersetOf_` array_ ["Marx"])
+        return m
+
+    runSql "window function average" $ runSelectReturningList $ select $ withWindow_
+         (\p -> frame_ (partitionBy_ (personName p)) noOrder_ noBounds_)
+        (\p w -> (p, avg_ (personAge p) `over_` w))
+        (all_ (_people db))

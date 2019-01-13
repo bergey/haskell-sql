@@ -15,3 +15,6 @@ init:
 
 psql:
 	psql "host=localhost port=5432 user=postgres"
+
+shell:
+	nix-shell --command 'export PS1="[haskell-sql] \t \# \h $$? $$ "; return'

@@ -56,44 +56,45 @@ Meeting sql=meetings
 print :: (Show a, MonadIO m) => a -> m ()
 print = liftIO . Prelude.print
 
-runSql :: (MonadUnliftIO m, IsPersistBackend backend,
-           BaseBackend backend ~ SqlBackend) =>
-          backend -> ReaderT backend m a -> m a
-runSql = flip runSqlConn
 
 main :: IO ()
 main = runStderrLoggingT $
     withPostgresqlConn @_ @SqlBackend "host=localhost port=5432 user=postgres" $ \conn -> do
-    runSql conn $ printMigration migrateAll
-    people <- runSql conn $ select $ from $ \person -> return person
-    liftIO $ print @[Entity Person] people
+    let
+        runSql :: Show a => String -> ReaderT SqlBackend (LoggingT IO) a -> LoggingT IO ()
+        runSql label query = do
+            liftIO $ putStrLn label
+            a <- runSqlConn query conn
+            liftIO $ print a
+            liftIO $ putStrLn ""
 
-    m_marx <- runSql conn $ select $ from $ \person -> do
+    runSql "migrate" $ printMigration migrateAll
+
+    runSql @[Person] "select all" $ select $ from $ \person -> return person
+    -- liftIO $ print @[Entity Person] people
+
+    runSql "select by ID where clause" $ select $ from $ \person -> do
         where_ ( person ^. PersonId ==. val (PersonKey 2) )
         return (person ^. PersonName, person ^. PersonAge)
-    liftIO $ print m_marx
 
-    tasks <- runSql conn $ select $ from $ \(person `InnerJoin` task) -> do
+    runSql "inner join" $ select $ from $ \(person `InnerJoin` task) -> do
         on (task ^. TaskOwner ==. person ^. PersonId)
         return (person ^. PersonName, task ^. TaskDescription)
-    liftIO $ print tasks
 
     -- meetings <- query_ conn "select id, time, details, attendees from meetings"
-    meetings <- runSql conn $ select $ from $ \meeting -> return meeting
-    liftIO $ print @[Entity Meeting] meetings
+    runSql @[Meeting] "select all with UUID PK" $ select $ from $ \meeting -> return meeting
 
-    smallOrOld <- runSql conn $ select $ from $ \person -> do
+    runSql "select by other where clause" $ select $ from $ \person -> do
         where_ (person ^. PersonAge >. val 22 ||. person ^. PersonHeight <. val 33)
         return person
-    print smallOrOld
 
-    sorted <- runSql conn $ select $ from $ \meeting -> do
+    runSql "order by & limit" $ select $ from $ \meeting -> do
         orderBy [ desc (meeting ^. MeetingTime) ]
+        limit 3
         return meeting
-    print sorted
 
     -- select p.id, name, age, height_inches, count(*) FROM people AS p JOIN tasks ON tasks.owner = p.id GROUP BY p.id, name, age, height_inches;
-    (countTasks :: [(Entity Person, Value Int)]) <- runSql conn $ select $ from $ \(person `InnerJoin` task) -> do
+    (countTasks :: [(Entity Person, Value Int)]) <- flip runSqlConn conn $ select $ from $ \(person `InnerJoin` task) -> do
         on (person ^. PersonId ==. task ^. TaskOwner)
         groupBy (person ^. PersonId, person ^. PersonName, person ^. PersonAge, person ^. PersonHeight)
         return (person, countRows)

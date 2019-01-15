@@ -1,26 +1,29 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Orphans where
 
 import           Database.Persist
 import           Database.Persist.Postgresql
-import           Database.Persist.TH
+-- import           Database.Persist.TH
 
-import           Control.Arrow ((&&&))
-import           Control.Monad.IO.Class
-import           Control.Monad.Logger
+-- import           Control.Arrow ((&&&))
+-- import           Control.Monad.IO.Class
+-- import           Control.Monad.Logger
 import           Data.Aeson (FromJSON(..), ToJSON(..))
-import           Data.Text (Text)
-import           Data.Time (UTCTime)
+-- import           Data.Text (Text)
+-- import           Data.Time (UTCTime)
 import           Data.UUID (UUID)
+import           Prelude
 import           Web.PathPieces
 
 import qualified Data.Aeson as JSON
-import qualified Data.ByteString.Char8 as B8
+-- import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
-import qualified Data.Vector as V
+-- import qualified Data.Vector as V
 
 instance PersistField UUID where
   toPersistValue = PersistDbSpecific . UUID.toASCIIBytes

@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -20,14 +21,18 @@ import           Data.Time
 import           Data.UUID (UUID)
 import           Data.Vector (Vector)
 import           Database.Beam
--- import           Database.Beam.Backend.SQL.SQL92
+import           Database.Beam.Backend.SQL.SQL92
 import           Database.Beam.Postgres
--- import           Database.PostgreSQL.Simple.FromField
+import           Database.Beam.Postgres.Syntax
+import           Database.PostgreSQL.Simple.FromField
+import           Database.PostgreSQL.Simple.ToField
 import           Prelude
 -- import           Text.Read as X (readMaybe)
 
 -- import qualified Data.Vector as V
 import qualified Data.UUID as UUID
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 
 mkID :: Coercible UUID.UUID id => String -> id
 mkID = coerce . fromJust . UUID.fromString
@@ -73,9 +78,40 @@ instance Table TaskT where
     primaryKey = TaskId . taskId
 instance Beamable (PrimaryKey TaskT)
 
+data MeetingType = Slack | Phone | Face
+    deriving (Eq, Show, Read, Enum, Bounded, Generic)
+
+-- TODO some Generic code to construct instances like these
+instance FromField MeetingType where
+    fromField field m_val = typename field >>= \case
+        "meeting_type" ->
+              case m_val of
+                  Nothing -> returnError UnexpectedNull field ""
+                  Just v  -> case v of
+                      "Slack" -> pure Slack
+                      "Phone" -> pure Phone
+                      "Face" -> pure Face
+                      _ -> returnError ConversionFailed field (ellipsis v)
+        _ ->  returnError Incompatible field ""
+
+instance ToField MeetingType where
+    toField Slack = Plain "Slack"
+    toField Phone = Plain "Phone"
+    toField Face = Plain "Face"
+
+instance HasSqlValueSyntax PgValueSyntax MeetingType where
+    sqlValueSyntax = PgValueSyntax . pgBuildAction . pure . toField
+instance FromBackendRow Postgres MeetingType
+
+ellipsis :: BS.ByteString -> String
+ellipsis x
+    | BS.length x > 25 = take 20 (BSC.unpack x) ++ "[...]"
+    | otherwise       = BSC.unpack x
+
 data MeetingT f = Meeting
     { meetingId :: Columnar f UUID
     , meetingTime :: Columnar f (Maybe UTCTime)
+    , meetingType :: C f MeetingType
     , meetingDetails :: Columnar f JSON.Value
     , meetingAttendees :: Columnar f (Vector Text)
     } deriving Generic
@@ -121,11 +157,11 @@ main = do
         runSql :: Show a => String -> Pg a -> IO ()
         runSql = runLabeled conn
 
-    runSql "insert full" $ runInsert $ insert (_people db) $
-        insertValues
-            [ Person 3 "Jones" 6 11
-            , Person 4 "', 1, 2, 3, '" 0 99
-            ]
+    -- runSql "insert full" $ runInsert $ insert (_people db) $
+    --     insertValues
+    --         [ Person 3 "Jones" 6 11
+    --         , Person 4 "', 1, 2, 3, '" 0 99
+    --         ]
 
     runSql "insert with default PK" $ runInsert $ insert (_people db) $
         insertExpressions
@@ -188,11 +224,9 @@ main = do
         tasks <- oneToMany_ (_tasks db) taskOwner person
         return (person, tasks)
 
-    -- -- outer join
     runSql "outer join" $ runSelectReturningList $ select $
         outerJoin_ (all_ (_people db)) (all_ (_tasks db)) (\(p, t) -> pk p ==. taskOwner t)
 
-    -- array columns
     runSql "array column" $ runSelectReturningList $ select $ all_ (_meetings db)
 
     -- inline SQL - escape hatch, likely needed for some of below
@@ -208,7 +242,6 @@ main = do
         guard_ (customExpr_ (\age -> "mod(" <> age <> ", 2) = 0") (personAge p))
         return p
 
-    -- aggregate functions - array_agg
     runSql "aggregate array_agg 1" $ runSelectReturningList $ select $ do
         p <- all_ (_people db)
         (owner, tasks) <- aggregate_ (\t -> (group_ (taskOwner t), pgArrayAgg (taskDescription t))) (all_ (_tasks db))
@@ -230,7 +263,7 @@ main = do
         guard_ (meetingAttendees m `isSupersetOf_` array_ ["Marx"])
         return m
 
-    runSql "window function average" $ runSelectReturningList $ select $ withWindow_
-         (\p -> frame_ (partitionBy_ (personName p)) noOrder_ noBounds_)
-        (\p w -> (p, avg_ (personAge p) `over_` w))
-        (all_ (_people db))
+    -- runSql "window function average" $ runSelectReturningList $ select $ withWindow_
+    --      (\p -> frame_ (partitionBy_ (personName p)) noOrder_ noBounds_)
+    --     (\p w -> (p, avg_ (personAge p) `over_` w))
+    --     (all_ (_people db))

@@ -22,6 +22,7 @@ executable beam-example
   build-depends:       base >=4.11 && <4.12
                      , beam-core
                      , beam-postgres
+                     , bytestring
                      , postgresql-simple
                      , vector
                      , aeson

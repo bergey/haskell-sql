@@ -23,8 +23,6 @@ import qualified Data.ByteString.Char8 as BSC
 
 -- | = Generics
 
--- fromFieldEnum :: Generic a => Field -> Maybe ByteString -> Conversion a
-
 class ToFieldEnumG rep where
     toFieldEnumG :: rep p -> Action
 
@@ -41,6 +39,13 @@ instance ToFieldEnumG c => ToFieldEnumG (D1 meta c) where
 toFieldEnum :: (ToFieldEnumG (Rep a), Generic a) => a -> Action
 toFieldEnum = toFieldEnumG . from
 
+-- | This version is much simpler than `toFieldEnum` above, but less
+-- type-safe.  It will happily compile for something like @data
+-- MeetingType = Slack | Phone Text | Face@ although this cannot
+-- possibly work.  I'm not sure how big a deal this is in practice -
+-- this doesn't seem like a common mistake to make, and I'd usually
+-- add @deriving (Eq, Show, Read, Enum, Bounded, Generic)@ which
+-- definitely don't work with the declaration above.
 toFieldShow :: Show a => a -> Action
 toFieldShow = Escape . BSC.pack . show
 

@@ -6,6 +6,7 @@ packages:
     - persistent-example
     - esqueleto-example
     - beam
+    - beam-enums
     - opaleye-example
     - opaleye-th
     - location: 

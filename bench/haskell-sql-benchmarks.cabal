@@ -1,0 +1,42 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ee62922137ed947f1a4fa877e700f93feeedb477dd0fe7c1fa46acdfd49c60ef
+
+name:           haskell-sql-benchmarks
+version:        0.1
+synopsis:       compare performance of Haskell PostgreSQL libraries
+category:       Database, PostgreSQL
+homepage:       https://github.com/bergey/preql#readme
+bug-reports:    https://github.com/bergey/preql/issues
+author:         Daniel Bergey
+maintainer:     bergey@teallabs.org
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/bergey/preql
+
+benchmark pgbench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  other-modules:
+      Paths_haskell_sql_benchmarks
+  build-depends:
+      base
+    , bytestring
+    , criterion
+    , deepseq
+    , hasql
+    , postgresql-binary
+    , postgresql-libpq
+    , postgresql-simple
+    , preql
+    , tasty
+    , text
+    , transformers
+    , vector
+  default-language: Haskell2010

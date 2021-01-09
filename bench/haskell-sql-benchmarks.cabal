@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.1.
+-- This file has been generated from package.yaml by hpack version 0.34.3.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ee62922137ed947f1a4fa877e700f93feeedb477dd0fe7c1fa46acdfd49c60ef
+-- hash: 66a7d7ab58bd5301a1bb65500be18bf281bc68b9576223b8dbf39cdd7d4feee8
 
 name:           haskell-sql-benchmarks
 version:        0.1
@@ -35,7 +35,6 @@ benchmark pgbench
     , postgresql-libpq
     , postgresql-simple
     , preql
-    , tasty
     , text
     , transformers
     , vector

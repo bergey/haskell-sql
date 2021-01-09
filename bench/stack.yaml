@@ -3,7 +3,8 @@ packages:
   - .
 
 extra-deps:
-  - preql-0.3
+  # - preql-0.3
+  - ../../preql/
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

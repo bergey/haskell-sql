@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -22,6 +23,7 @@ import qualified Hasql.Statement                      as HQL
 
 import qualified PostgreSQL.Binary.Decoding           as PGB
 import qualified Preql
+import Preql.FromSql (deriveFromSql)
 import qualified Preql.Effect                         as Preql
 import qualified Preql.Wire.TypeInfo.Static           as OID
 
@@ -97,6 +99,8 @@ instance NFData PQ.Oid where
     rnf (PQ.Oid oid) = rnf oid
 deriving newtype instance NFData PgName
 
+newtype PgName = PgName Text
+
 data TypeInfo = TypeInfo
     { typname        :: !PgName
     , typnamespace   :: !PQ.Oid
@@ -112,14 +116,7 @@ data TypeInfo = TypeInfo
     , typarray       :: !PQ.Oid
     }
     deriving (Generic, NFData)
-
-instance Preql.FromSql TypeInfo where
-    fromSql = TypeInfo <$>
-        Preql.fromSql <*> Preql.fromSql <*> Preql.fromSql <*> Preql.fromSql <*>
-        Preql.fromSql <*> Preql.fromSql <*> Preql.fromSql <*> Preql.fromSql <*>
-        Preql.fromSql <*> Preql.fromSql <*> Preql.fromSql <*> Preql.fromSql
-
-newtype PgName = PgName Text
+$(deriveFromSql ''TypeInfo)
 
 instance Preql.FromSqlField PgName where
     fromSqlField = Preql.FieldDecoder (Preql.Oid OID.nameOid) (PgName <$> PGB.text_strict)

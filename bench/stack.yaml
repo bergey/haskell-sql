@@ -6,6 +6,10 @@ extra-deps:
   # - preql-0.3
   - ../../preql/
 
+nix:
+  packages:
+    - postgresql_12
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

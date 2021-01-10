@@ -1,0 +1,28 @@
+spec-version: 0.30.0
+name: haskell-sql-benchmarks
+version: 0.1
+synopsis: compare performance of Haskell PostgreSQL libraries
+    
+category: Database, PostgreSQL
+github: bergey/preql
+author: Daniel Bergey
+maintainer: bergey@teallabs.org
+
+dependencies:
+  - preql
+  - hasql
+  - postgresql-simple
+  - vector
+  - text
+  - postgresql-libpq
+  - base
+  - transformers
+  - bytestring
+  - postgresql-binary
+
+benchmarks:
+  pgbench:
+    main: Bench.hs
+    dependencies:
+      - criterion
+      - deepseq

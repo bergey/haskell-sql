@@ -3,8 +3,7 @@ packages:
   - .
 
 extra-deps:
-  # - preql-0.3
-  - ../../preql/
+  - preql-0.5
 
 nix:
   packages:

@@ -1,3 +1,6 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -116,7 +119,6 @@ data TypeInfo = TypeInfo
     , typarray       :: !PQ.Oid
     }
     deriving (Generic, NFData)
-$(deriveFromSql ''TypeInfo)
 
 instance Preql.FromSqlField PgName where
     fromSqlField = Preql.FieldDecoder (Preql.Oid OID.nameOid) (PgName <$> PGB.text_strict)
@@ -129,11 +131,6 @@ instance PGS.FromField PgName where
         else case m_data of
             Nothing -> PGS.returnError PGS.UnexpectedNull field ""
             Just bs -> return (PgName (decodeUtf8 bs))
-
--- from preql trunk
-instance Preql.FromSqlField Char where
-    fromSqlField = Preql.FieldDecoder (Preql.Oid OID.charOid) PGB.char
-instance Preql.FromSql Char where fromSql = Preql.notNull Preql.fromSqlField
 
 instance PGS.FromRow TypeInfo where
     fromRow = TypeInfo <$>
@@ -158,3 +155,5 @@ decodeTypeInfo = D.rowVector $ TypeInfo
 
 decodeOid :: HQL.Row PQ.Oid
 decodeOid = D.column (D.nonNullable (PQ.Oid . fromIntegral <$> D.int8))
+
+$(deriveFromSql ''TypeInfo)
